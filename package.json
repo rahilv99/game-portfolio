@@ -1,18 +1,19 @@
 {
-  "name": "phaser-tilemap-post-5-04-platformer-starter",
+  "name": "game-portfolio",
   "version": "1.0.0",
   "description": "",
-  "main": "index.html",
   "scripts": {
-    "start": "parcel index.html --open",
+    "start": "parcel index.html",
     "build": "parcel build index.html"
   },
   "dependencies": {
-    "phaser": "3.55.2",
+    "parcel": "^2.15.4",
+    "phaser": "^3.90.0",
     "phaser-matter-collision-plugin": "1.0.0"
   },
+  "keywords": [],
   "devDependencies": {
-    "parcel-bundler": "^1.6.1"
-  },
-  "keywords": []
+    "parcel-reporter-static-files-copy": "^1.5.3",
+    "process": "^0.11.10"
+  }
 }
