@@ -1,20 +1,11 @@
-/**
- * Author: Michael Hadley, mikewesthad.com
- * Asset Credits:
- *  - Twemoji, https://github.com/twitter/twemoji, CC-BY 4.0
- *  - Tilesets by Kenney, https://www.kenney.nl/assets/platformer-art-pixel-redux and
- *    https://www.kenney.nl/assets/abstract-platformer, public domain
- *  - Character by 0x72 under CC-0, https://0x72.itch.io/16x16-industrial-tileset
- */
-
 import Phaser from "phaser";
 import PhaserMatterCollisionPlugin from "phaser-matter-collision-plugin";
 import MainScene from "./main-scene.js";
 
 const config = {
   type: Phaser.AUTO,
-  width: 800,
-  height: 600,
+  width: 1200,
+  height: 1000,
   backgroundColor: "#000c1f",
   parent: "game-container",
   scene: MainScene,
