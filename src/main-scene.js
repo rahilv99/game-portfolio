@@ -10,6 +10,82 @@ export default class MainScene extends Phaser.Scene {
     super({ key: 'MainScene' });
   }
 
+  resetGameState() {
+    // Close any open inventory displays
+    if (this.currentInventoryDisplay) {
+      this.closeInventory();
+    }
+
+    // Clean up any existing collision handlers
+    if (this.unsubscribePlayerCollide) {
+      this.unsubscribePlayerCollide();
+      this.unsubscribePlayerCollide = null;
+    }
+    if (this.unsubscribeCoinCollide) {
+      this.unsubscribeCoinCollide();
+      this.unsubscribeCoinCollide = null;
+    }
+    if (this.unsubscribeCelebrate) {
+      this.unsubscribeCelebrate();
+      this.unsubscribeCelebrate = null;
+    }
+
+    // Clean up keyboard handlers
+    if (this.inventoryCloseHandler) {
+      this.input.keyboard.off('keydown-R', this.inventoryCloseHandler);
+      this.inventoryCloseHandler = null;
+    }
+
+    // Clear any active tweens
+    this.tweens.killAll();
+
+    // Reset inventory state
+    this.currentInventoryDisplay = null;
+    this.inventoryContainer = null;
+    this.inventoryScrollMask = null;
+    this.inventoryItems = [];
+    this.inventoryItemData = [];
+    this.scrollUpIndicator = null;
+    this.scrollDownIndicator = null;
+    this.inventoryScrollY = 0;
+    this.inventoryMaxScroll = 0;
+
+    // Clean up input keys
+    if (this.upKey) {
+      this.input.keyboard.removeKey(this.upKey);
+      this.upKey = null;
+    }
+    if (this.downKey) {
+      this.input.keyboard.removeKey(this.downKey);
+      this.downKey = null;
+    }
+
+    // Clear game object arrays
+    this.chests = [];
+    this.coins = [];
+    this.boulders = [];
+
+    // Reset camera
+    this.cameras.main.setBackgroundColor(0x87CEEB); // Default sky blue
+    this.cameras.main.stopFollow();
+
+    // Clear any display texts that might persist
+    if (this.scoreText) {
+      this.scoreText.destroy();
+      this.scoreText = null;
+    }
+    if (this.chestCountText) {
+      this.chestCountText.destroy();
+      this.chestCountText = null;
+    }
+    if (this.deathCountText) {
+      this.deathCountText.destroy();
+      this.deathCountText = null;
+    }
+
+    console.log("Game state reset completed");
+  }
+
   preload() {
 
     // load map and tileset
@@ -80,6 +156,13 @@ export default class MainScene extends Phaser.Scene {
   }
 
   create() {
+    // Reset all game state - this ensures complete reset when returning from end scene
+    this.resetGameState();
+    
+    // Initialize timer - starts when the scene is created
+    this.startTime = this.time.now;
+    this.gameStartTime = Date.now(); // Also store actual timestamp for more precision
+
     // Initialize score tracking
     this.score = 0;
     this.coinValues = {
@@ -87,7 +170,10 @@ export default class MainScene extends Phaser.Scene {
       'silver': 2,
       'bronze': 1
     };
-    this.chestCost = 5; // Cost to open a chest
+    this.chestCost = 3; // Cost to open a chest
+
+    // Initialize inventory for collecting chest scripts
+    this.inventory = [];
     
     // Initialize chest and death tracking
     this.totalChests = 0; // Will be set after creating chests
@@ -95,7 +181,6 @@ export default class MainScene extends Phaser.Scene {
     
     // Get death count from localStorage (persists across game restarts)
     this.deathCount = parseInt(localStorage.getItem('gameDeathCount') || '0', 10);
-    this.maxDeaths = 3;
     
     // map.createLayer("Background", tileset, 0, 0);
     // map.createLayer("Foreground", tileset, 0, 0).setDepth(10);
@@ -112,8 +197,8 @@ export default class MainScene extends Phaser.Scene {
     // rectangle body (similar to AP).
     this.matter.world.convertTilemapLayer(groundLayer);
 
-    this.cameras.main.setBounds(0, 60, map.widthInPixels, map.heightInPixels);
-    this.matter.world.setBounds(0, 60, map.widthInPixels, map.heightInPixels);
+    this.cameras.main.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
+    this.matter.world.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
 
     // The spawn point is set using a point object inside of Tiled (within the "Spawn" object layer)
     const spawnObj = map.findObject("objects", (obj) => obj && obj.name === "Spawn Point");
@@ -121,7 +206,11 @@ export default class MainScene extends Phaser.Scene {
       console.error("Could not find Spawn Point in tilemap");
       return;
     }
-    this.player = new Player(this, spawnObj.x, spawnObj.y - 50);
+    // Store spawn position for respawning
+    this.spawnX = spawnObj.x;
+    this.spawnY = spawnObj.y - 50;
+    
+    this.player = new Player(this, this.spawnX, this.spawnY);
 
     // Create chest objects from tilemap
     this.chests = [];
@@ -221,7 +310,7 @@ export default class MainScene extends Phaser.Scene {
       context: this,
     });
 
-    const help = this.add.text(16, 16, "Arrows/WASD to move the player.\nPress E near chests to open/close them.\nPress R to read collected scripts.\nOpening chests costs 5 coins!", {
+    const help = this.add.text(16, 16, "Arrows/WASD to move the player.\nPress E near chests to open/close them.\nPress R to read collected scripts.\nOpening chests costs 3 coins!", {
       fontSize: "18px",
       padding: { x: 10, y: 5 },
       backgroundColor: "#ffffff",
@@ -250,8 +339,8 @@ export default class MainScene extends Phaser.Scene {
     this.chestCountText.setScrollFactor(0).setDepth(1000);
 
     // Create death counter display
-    const deathColor = this.deathCount >= this.maxDeaths ? "#FF0000" : "#4A4A4A";
-    this.deathCountText = this.add.text(16, 180, `Deaths: ${this.deathCount}/${this.maxDeaths}`, {
+    const deathColor = "#4A4A4A";
+    this.deathCountText = this.add.text(16, 180, `Deaths: ${this.deathCount}`, {
       fontSize: "20px",
       padding: { x: 10, y: 5 },
       backgroundColor: deathColor,
@@ -281,8 +370,6 @@ export default class MainScene extends Phaser.Scene {
     // Unsubscribe from collision events so that this logic is run only once
     this.unsubscribePlayerCollide();
 
-    console.log(`Player died from: ${cause}`);
-
     // Increment death count and save to localStorage
     this.deathCount++;
     localStorage.setItem('gameDeathCount', this.deathCount.toString());
@@ -291,20 +378,43 @@ export default class MainScene extends Phaser.Scene {
     const cam = this.cameras.main;
     cam.fade(250, 0, 0, 0);
     cam.once("camerafadeoutcomplete", () => {
-      // Check if max deaths reached
-      if (this.deathCount >= this.maxDeaths) {
-        // Reset death count and restart from beginning
-        localStorage.setItem('gameDeathCount', '0');
-        console.log("Max deaths reached! Resetting progress...");
-      }
-      
-      // Properly destroy the player to clean up event listeners before restarting
-      this.player.destroy();
-      this.scene.restart();
+      // Just respawn player at spawn point, keep everything else
+      console.log(`Death ${this.deathCount} respawning player`);
+      this.respawnPlayer();
     });
   }
 
-  update() {
+  respawnPlayer() {
+    // Destroy old player
+    this.player.destroy();
+    
+    // Create new player at spawn position
+    this.player = new Player(this, this.spawnX, this.spawnY);
+    
+    // Re-setup collision detection for the new player
+    this.unsubscribePlayerCollide = this.matterCollision.addOnCollideStart({
+      objectA: this.player.sprite,
+      callback: this.onPlayerCollide,
+      context: this,
+    });
+
+    this.unsubscribeCoinCollide = this.matterCollision.addOnCollideStart({
+      objectA: this.player.sprite,
+      callback: this.onPlayerCoinCollide,
+      context: this,
+    });
+
+    // Update camera to follow new player
+    this.cameras.main.startFollow(this.player.sprite, false, 0.5, 0.5);
+    
+    // Update death counter display
+    this.updateDeathCountDisplay();
+    
+    // Fade camera back in
+    this.cameras.main.fadeIn(250, 0, 0, 0);
+  }
+
+  update(time, delta) {
     // Find the closest chest within interaction distance
     let closestChest = null;
     let closestDistance = this.chestInteractionDistance;
@@ -331,6 +441,11 @@ export default class MainScene extends Phaser.Scene {
     // Check for R key press to show inventory
     if (Phaser.Input.Keyboard.JustDown(this.rKey)) {
       this.showInventory();
+    }
+
+    // Handle inventory scrolling when inventory is open
+    if (this.currentInventoryDisplay) {
+      this.updateInventoryScrolling(time, delta);
     }
 
     // Update boulder proximity spawning
@@ -453,9 +568,7 @@ export default class MainScene extends Phaser.Scene {
     
     // Update score display
     this.updateScoreDisplay();
-    
-    console.log(`Collected ${coin.coinType} coin! +${points} points (Total: ${this.score})`);
-    
+        
     // Remove coin from the coins array
     const index = this.coins.indexOf(coin);
     if (index > -1) {
@@ -478,9 +591,7 @@ export default class MainScene extends Phaser.Scene {
 
   updateDeathCountDisplay() {
     if (this.deathCountText) {
-      const deathColor = this.deathCount >= this.maxDeaths ? "#FF0000" : "#4A4A4A";
-      this.deathCountText.setBackgroundColor(deathColor);
-      this.deathCountText.setText(`Deaths: ${this.deathCount}/${this.maxDeaths}`);
+      this.deathCountText.setText(`Deaths: ${this.deathCount}`);
     }
   }
 
@@ -501,7 +612,7 @@ export default class MainScene extends Phaser.Scene {
         
         // Add chest script to player inventory if it exists and hasn't been collected yet
         if (chest.script && !chest.scriptCollected) {
-          this.player.inventory.push({
+          this.inventory.push({
             script: chest.script,
             number: chest.number || 0
           });
@@ -553,7 +664,7 @@ export default class MainScene extends Phaser.Scene {
 
   showInventory() {
     // Sort inventory items by their number attribute in ascending order
-    const sortedInventory = this.player.inventory.slice().sort((a, b) => a.number - b.number);
+    const sortedInventory = this.inventory.slice().sort((a, b) => a.number - b.number);
     
     if (sortedInventory.length === 0) {
       // Show message when inventory is empty
@@ -583,44 +694,273 @@ export default class MainScene extends Phaser.Scene {
       return;
     }
     
-    // Create inventory display with collected scripts
-    let inventoryText = "=== COLLECTED SCRIPTS ===\nPress R to close\n\n";
+    this.createScrollableInventory(sortedInventory);
+  }
+
+  createScrollableInventory(sortedInventory) {
+    const screenWidth = this.cameras.main.width;
+    const screenHeight = this.cameras.main.height;
     
-    sortedInventory.forEach((item, index) => {
-      inventoryText += `${item.number}. ${item.script}\n\n`;
-    });
+    // Container dimensions
+    const containerWidth = Math.min(600, screenWidth - 80);
+    const containerHeight = Math.min(400, screenHeight - 120);
+    const containerX = screenWidth / 2 - containerWidth / 2;
+    const containerY = screenHeight / 2 - containerHeight / 2;
     
-    const inventoryDisplay = this.add.text(this.cameras.main.width / 2, this.cameras.main.height / 2, inventoryText, {
-      fontSize: "18px",
-      padding: { x: 20, y: 20 },
-      backgroundColor: "#2C3E50",
-      fill: "#ECF0F1",
-      align: "center",
+    // Create main container group
+    this.inventoryContainer = this.add.group();
+    
+    // Create background
+    const background = this.add.rectangle(screenWidth / 2, screenHeight / 2, containerWidth + 20, containerHeight + 60, 0x2C3E50, 0.95);
+    background.setScrollFactor(0).setDepth(2990);
+    background.setStrokeStyle(3, 0x34495E);
+    this.inventoryContainer.add(background);
+    
+    // Create title
+    const title = this.add.text(screenWidth / 2, containerY - 15, "📜 COLLECTED SCRIPTS 📜", {
+      fontSize: "24px",
+      fill: "#F39C12",
       fontStyle: "bold",
-      wordWrap: { width: this.cameras.main.width - 100 }
+      align: "center"
     });
-    inventoryDisplay.setOrigin(0.5, 0.5);
-    inventoryDisplay.setScrollFactor(0);
-    inventoryDisplay.setDepth(3000);
+    title.setOrigin(0.5, 0.5).setScrollFactor(0).setDepth(3000);
+    this.inventoryContainer.add(title);
     
-    // Store reference to inventory display for closing
-    this.currentInventoryDisplay = inventoryDisplay;
+    // Create instruction text
+    const instructions = this.add.text(screenWidth / 2, containerY + containerHeight + 20, "↑/↓ Arrow Keys to scroll • R to close", {
+      fontSize: "16px",
+      fill: "#BDC3C7",
+      fontStyle: "italic",
+      align: "center"
+    });
+    instructions.setOrigin(0.5, 0.5).setScrollFactor(0).setDepth(3000);
+    this.inventoryContainer.add(instructions);
     
-    // Set up input listener to close inventory
+    // Create scroll container
+    const scrollMask = this.make.graphics();
+    scrollMask.fillRect(containerX, containerY, containerWidth, containerHeight);
+    scrollMask.setScrollFactor(0);
+    
+    // Create scrollable content with dynamic sizing
+    this.inventoryScrollY = 0;
+    this.inventoryItems = [];
+    this.inventoryItemData = []; // Store item positions and heights
+    
+    let currentY = containerY + 10; // Start position with padding
+    let totalContentHeight = 0;
+    
+    // Create individual script items with dynamic sizing
+    sortedInventory.forEach((item, index) => {
+      // Create temporary text to measure actual dimensions
+      const tempText = this.add.text(0, 0, item.script, {
+        fontSize: "14px",
+        fontStyle: "normal",
+        wordWrap: { width: containerWidth - 100, useAdvancedWrap: true }
+      });
+      
+      // Measure the wrapped text dimensions
+      const textHeight = tempText.height;
+      const textWidth = tempText.width;
+      
+      // Clean up temporary text
+      tempText.destroy();
+      
+      // Calculate item height based on content (minimum 60px, with padding)
+      const itemHeight = Math.max(60, textHeight + 30);
+      const itemY = currentY + itemHeight / 2;
+      
+      // Create item background that fits content
+      const itemBg = this.add.rectangle(screenWidth / 2, itemY, containerWidth - 20, itemHeight, 0x34495E, 0.8);
+      itemBg.setScrollFactor(0).setDepth(2995);
+      itemBg.setStrokeStyle(2, 0x7F8C8D);
+      itemBg.setData('originalY', itemY); // Store original position
+      
+      // Create item number badge (positioned at top-left of item)
+      const badgeY = currentY + 25;
+      const numberBadge = this.add.circle(containerX + 30, badgeY, 15, 0xE74C3C);
+      numberBadge.setScrollFactor(0).setDepth(3000);
+      numberBadge.setStrokeStyle(2, 0xC0392B);
+      numberBadge.setData('originalY', badgeY); // Store original position
+      
+      const numberText = this.add.text(containerX + 30, badgeY, item.number.toString(), {
+        fontSize: "16px",
+        fill: "#FFFFFF",
+        fontStyle: "bold",
+        align: "center"
+      });
+      numberText.setOrigin(0.5, 0.5).setScrollFactor(0).setDepth(3001);
+      numberText.setData('originalY', badgeY); // Store original position
+      
+      // Create script content positioned within the flexible container
+      const textY = currentY + 15;
+      const scriptText = this.add.text(containerX + 60, textY, item.script, {
+        fontSize: "14px",
+        fill: "#ECF0F1",
+        fontStyle: "normal",
+        align: "left",
+        wordWrap: { width: containerWidth - 100, useAdvancedWrap: true }
+      });
+      scriptText.setOrigin(0, 0).setScrollFactor(0).setDepth(3000);
+      scriptText.setData('originalY', textY); // Store original position
+      
+      // Store item data for scrolling calculations
+      this.inventoryItemData.push({
+        y: currentY,
+        height: itemHeight,
+        elements: [itemBg, numberBadge, numberText, scriptText]
+      });
+      
+      // Store items for scrolling
+      this.inventoryItems.push(itemBg, numberBadge, numberText, scriptText);
+      this.inventoryContainer.add(itemBg);
+      this.inventoryContainer.add(numberBadge);
+      this.inventoryContainer.add(numberText);
+      this.inventoryContainer.add(scriptText);
+      
+      // Move to next item position
+      currentY += itemHeight + 10; // Add spacing between items
+      totalContentHeight += itemHeight + 10;
+    });
+    
+    // Calculate max scroll based on actual content height
+    this.inventoryMaxScroll = Math.max(0, totalContentHeight - containerHeight + 20);
+    
+    // Apply mask to scrollable content
+    this.inventoryItems.forEach(item => {
+      if (item.type !== 'Rectangle' || item.fillColor !== 0x2C3E50) { // Don't mask the main background
+        item.setMask(scrollMask.createGeometryMask());
+      }
+    });
+    
+    // Create scroll indicators if needed
+    if (this.inventoryMaxScroll > 0) {
+      this.scrollUpIndicator = this.add.text(screenWidth / 2, containerY - 5, "▲", {
+        fontSize: "20px",
+        fill: "#95A5A6",
+        align: "center"
+      });
+      this.scrollUpIndicator.setOrigin(0.5, 0.5).setScrollFactor(0).setDepth(3000);
+      this.scrollUpIndicator.setAlpha(0.5);
+      this.inventoryContainer.add(this.scrollUpIndicator);
+      
+      this.scrollDownIndicator = this.add.text(screenWidth / 2, containerY + containerHeight + 5, "▼", {
+        fontSize: "20px",
+        fill: "#95A5A6",
+        align: "center"
+      });
+      this.scrollDownIndicator.setOrigin(0.5, 0.5).setScrollFactor(0).setDepth(3000);
+      this.scrollDownIndicator.setAlpha(1);
+      this.inventoryContainer.add(this.scrollDownIndicator);
+    }
+    
+    // Store reference for input handling
+    this.currentInventoryDisplay = this.inventoryContainer;
+    this.inventoryScrollMask = scrollMask;
+    
+    // Set up input listeners
+    this.setupInventoryControls();
+  }
+  
+  setupInventoryControls() {
+    this.upKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.UP);
+    this.downKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.DOWN);
+    
+    // Set up a timer for continuous scrolling
+    this.inventoryScrollTimer = 0;
+    this.inventoryScrollDelay = 10; // milliseconds between scroll steps when holding key
+    
     const closeInventoryHandler = () => {
       if (Phaser.Input.Keyboard.JustDown(this.rKey) && this.currentInventoryDisplay) {
-        this.currentInventoryDisplay.destroy();
-        this.currentInventoryDisplay = null;
-        this.input.keyboard.off('keydown-R', closeInventoryHandler);
+        this.closeInventory();
       }
     };
     
     this.input.keyboard.on('keydown-R', closeInventoryHandler);
+    
+    // Store handlers for cleanup
+    this.inventoryCloseHandler = closeInventoryHandler;
+  }
+  
+  updateInventoryScroll() {
+    // Move all items using the stored item data with dynamic heights
+    this.inventoryItemData.forEach(itemData => {
+      itemData.elements.forEach(element => {
+        const originalY = element.getData('originalY');
+        if (originalY !== undefined) {
+          element.y = originalY - this.inventoryScrollY;
+        }
+      });
+    });
+    
+    // Update scroll indicators
+    if (this.scrollUpIndicator) {
+      this.scrollUpIndicator.setAlpha(this.inventoryScrollY > 0 ? 1 : 0.3);
+    }
+    if (this.scrollDownIndicator) {
+      this.scrollDownIndicator.setAlpha(this.inventoryScrollY < this.inventoryMaxScroll ? 1 : 0.3);
+    }
+  }
+  
+  updateInventoryScrolling(time, delta) {
+    if (!this.currentInventoryDisplay || this.inventoryMaxScroll <= 0) return;
+    
+    const scrollSpeed = 5; // pixels per scroll step
+    let scrollChanged = false;
+    
+    // Update scroll timer
+    this.inventoryScrollTimer += delta;
+    
+    // Check if enough time has passed for the next scroll step
+    if (this.inventoryScrollTimer >= this.inventoryScrollDelay) {
+      if (this.upKey.isDown) {
+        this.inventoryScrollY = Math.max(0, this.inventoryScrollY - scrollSpeed);
+        scrollChanged = true;
+      } else if (this.downKey.isDown) {
+        this.inventoryScrollY = Math.min(this.inventoryMaxScroll, this.inventoryScrollY + scrollSpeed);
+        scrollChanged = true;
+      }
+      
+      // Reset timer for next scroll step
+      if (scrollChanged) {
+        this.inventoryScrollTimer = 0;
+        this.updateInventoryScroll();
+      }
+    }
+  }
+
+  closeInventory() {
+    if (this.currentInventoryDisplay) {
+      // Clean up all inventory elements
+      this.inventoryContainer.clear(true, true);
+      this.inventoryContainer.destroy();
+      
+      if (this.inventoryScrollMask) {
+        this.inventoryScrollMask.destroy();
+        this.inventoryScrollMask = null;
+      }
+      
+      // Clean up references
+      this.currentInventoryDisplay = null;
+      this.inventoryItems = [];
+      this.scrollUpIndicator = null;
+      this.scrollDownIndicator = null;
+      
+      // Remove input listeners
+      this.input.keyboard.off('keydown-R', this.inventoryCloseHandler);
+      
+      // Clean up keys
+      if (this.upKey) {
+        this.input.keyboard.removeKey(this.upKey);
+        this.upKey = null;
+      }
+      if (this.downKey) {
+        this.input.keyboard.removeKey(this.downKey);
+        this.downKey = null;
+      }
+    }
   }
 
   onPlayerWin() {
-    // Celebrate only once
-    this.unsubscribeCelebrate();
 
     // Drop some heart-eye emojis
     for (let i = 0; i < 35; i++) {
@@ -636,8 +976,7 @@ export default class MainScene extends Phaser.Scene {
         .setScale(0.3);
     }
 
-    // After a short delay, transition to end scene
-    this.time.delayedCall(2000, () => {
+    this.time.delayedCall(100, () => {
       this.transitionToEndScene('endPoint');
     });
   }
@@ -651,23 +990,32 @@ export default class MainScene extends Phaser.Scene {
   }
 
   transitionToEndScene(winCondition) {
+    // Calculate elapsed time in milliseconds and seconds
+    const endTime = this.time.now;
+    const elapsedTimeMs = endTime - this.startTime;
+    const elapsedTimeSeconds = Math.floor(elapsedTimeMs / 1000);
+    
     // Prepare data to pass to end scene
     const endSceneData = {
-      inventory: this.player.inventory,
+      inventory: this.inventory,
       score: this.score,
       winCondition: winCondition,
       totalChests: this.totalChests,
-      openedChests: this.openedChests
+      openedChests: this.openedChests,
+      deathCount: this.deathCount,
+      elapsedTimeMs: elapsedTimeMs,
+      elapsedTimeSeconds: elapsedTimeSeconds
     };
 
     // Freeze the player
     this.player.freeze();
-    
     // Fade out camera and transition to end scene
     const cam = this.cameras.main;
     cam.fade(1000, 0, 0, 0);
     cam.once("camerafadeoutcomplete", () => {
       this.scene.start('EndScene', endSceneData);
     });
+    
   }
+
 }

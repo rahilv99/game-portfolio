@@ -15,6 +15,11 @@ export default class Chest extends Phaser.GameObjects.Sprite {
 
     this.setDepth(10); // Make sure chests appear above ground
     this.isOpened = false;
+    this.scriptCollected = false;
+
+    // Initialize script content with placeholder if not set
+    this.script = null;
+    this.number = 0;
 
     // Create chest animations
     this.createAnimations();

@@ -51,9 +51,6 @@ export default class Player {
     this.jumpInput = new MultiKey(scene, [UP, W, SPACE]);
 
     this.scene.events.on("update", this.update, this);
-    
-    // Initialize inventory for collecting chest scripts
-    this.inventory = [];
   
     // Create the physics-based sprite that we will move around and animate
     // Start with the idle-right animation as default
@@ -209,5 +206,17 @@ export default class Player {
     const sensors = [this.sensors.bottom, this.sensors.left, this.sensors.right];
     this.scene.matterCollision.removeOnCollideStart({ objectA: sensors });
     this.scene.matterCollision.removeOnCollideActive({ objectA: sensors });
+
+    // Destroy the sprite to make the player disappear
+    if (this.sprite) {
+      this.sprite.destroy();
+      this.sprite = null;
+    }
+
+    // Clear jump cooldown timer if it exists
+    if (this.jumpCooldownTimer) {
+      this.jumpCooldownTimer.destroy();
+      this.jumpCooldownTimer = null;
+    }
    }
 }
