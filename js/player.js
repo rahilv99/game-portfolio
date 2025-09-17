@@ -51,6 +51,9 @@ export default class Player {
     this.jumpInput = new MultiKey(scene, [UP, W, SPACE]);
 
     this.scene.events.on("update", this.update, this);
+    
+    // Initialize inventory for collecting chest scripts
+    this.inventory = [];
   
     // Create the physics-based sprite that we will move around and animate
     // Start with the idle-right animation as default
@@ -58,11 +61,11 @@ export default class Player {
 
     const { Body, Bodies } = Phaser.Physics.Matter.Matter; // Native Matter modules
     const { width: w, height: h } = this.sprite;
-    const mainBody = Bodies.rectangle(0, 0, w * 0.3, h*0.5, { chamfer: { radius: 10 } });
+    const mainBody = Bodies.rectangle(0, 0, w * 0.2, h*0.5, { chamfer: { radius: 10 } });
     this.sensors = {
-      bottom: Bodies.rectangle(0, h * 0.5, w * 0.25, 2, { isSensor: true }),
-      left: Bodies.rectangle(-w * 0.1, 0, 2, h * 0.5, { isSensor: true }),
-      right: Bodies.rectangle(w * 0.1, 0, 2, h * 0.5, { isSensor: true }),
+      bottom: Bodies.rectangle(0, h * 0.25, w * 0.25, 4, { isSensor: true }),
+      left: Bodies.rectangle(-w * 0.1, 0, 2, h * 0.25, { isSensor: true }),
+      right: Bodies.rectangle(w * 0.1, 0, 2, h * 0.25, { isSensor: true }),
     };
     const compoundBody = Body.create({
       parts: [mainBody, this.sensors.bottom, this.sensors.left, this.sensors.right],
@@ -108,6 +111,8 @@ export default class Player {
     // 0.5px of overlap with the sensor so that the sensor will stay colliding on the next tick if
     // the player doesn't move.
     if (bodyB.isSensor) return; // We only care about collisions with physical objects
+    
+    
     if (bodyA === this.sensors.left) {
       this.isTouching.left = true;
       if (pair.separation > 0.5) this.sprite.x += pair.separation - 0.5;
@@ -141,22 +146,16 @@ export default class Player {
     const isOnGround = this.isTouching.ground;
     const isInAir = !isOnGround;
 
-    const moveForce = isOnGround ? 0.03: 0.01;
+    const moveForce = isOnGround ? 0.01: 0.005;
 
     if (isLeftKeyDown) {
       this.forward = false;
 
-      // Don't let the player push things left if they in the air
-      if (!(isInAir && this.isTouching.left)) {
-        sprite.applyForce({ x: -moveForce, y: 0 });
-      }
+      sprite.applyForce({ x: -moveForce, y: 0 });
     } else if (isRightKeyDown) {
       this.forward = true;
 
-      // Don't let the player push things right if they in the air
-      if (!(isInAir && this.isTouching.right)) {
-        sprite.applyForce({ x: moveForce, y: 0 });
-      }
+      sprite.applyForce({ x: moveForce, y: 0 });
     }
 
     // Limit horizontal speed, without this the player's velocity would just keep increasing to

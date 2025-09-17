@@ -1,14 +1,15 @@
 import Phaser from "phaser";
 import PhaserMatterCollisionPlugin from "phaser-matter-collision-plugin";
 import MainScene from "./main-scene.js";
+import EndScene from "./end-scene.js";
 
 const config = {
   type: Phaser.AUTO,
-  width: 1200,
-  height: 1000,
+  width: 1000,
+  height: 800,
   backgroundColor: "#000c1f",
   parent: "game-container",
-  scene: MainScene,
+  scene: [MainScene, EndScene],
   pixelArt: true,
   physics: { default: "matter" },
   plugins: {
