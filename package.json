@@ -9,7 +9,8 @@
   "dependencies": {
     "parcel": "^2.15.4",
     "phaser": "^3.90.0",
-    "phaser-matter-collision-plugin": "1.0.0"
+    "phaser-matter-collision-plugin": "1.0.0",
+    "@supabase/supabase-js": "^2.35.0"
   },
   "keywords": [],
   "devDependencies": {
