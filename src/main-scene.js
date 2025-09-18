@@ -82,6 +82,10 @@ export default class MainScene extends Phaser.Scene {
       this.deathCountText.destroy();
       this.deathCountText = null;
     }
+    if (this.timerText) {
+      this.timerText.destroy();
+      this.timerText = null;
+    }
 
     console.log("Game state reset completed");
   }
@@ -348,6 +352,16 @@ export default class MainScene extends Phaser.Scene {
       fontStyle: "bold"
     });
     this.deathCountText.setScrollFactor(0).setDepth(1000);
+
+    // Create timer display
+    this.timerText = this.add.text(16, 220, "Time: 00:00", {
+      fontSize: "20px",
+      padding: { x: 10, y: 5 },
+      backgroundColor: "#2E86C1", // Blue color for timer
+      fill: "#FFFFFF",
+      fontStyle: "bold"
+    });
+    this.timerText.setScrollFactor(0).setDepth(1000);
   }
 
   onPlayerCollide({ gameObjectB }) {
@@ -416,6 +430,9 @@ export default class MainScene extends Phaser.Scene {
   }
 
   update(time, delta) {
+    // Update timer display
+    this.updateTimerDisplay();
+
     // Find the closest chest within interaction distance
     let closestChest = null;
     let closestDistance = this.chestInteractionDistance;
@@ -593,6 +610,22 @@ export default class MainScene extends Phaser.Scene {
   updateDeathCountDisplay() {
     if (this.deathCountText) {
       this.deathCountText.setText(`Deaths: ${this.deathCount}`);
+    }
+  }
+
+  updateTimerDisplay() {
+    if (this.timerText && this.startTime !== undefined) {
+      // Calculate elapsed time in seconds
+      const currentTime = this.time.now;
+      const elapsedMs = currentTime - this.startTime;
+      const elapsedSeconds = Math.floor(elapsedMs / 1000);
+      
+      // Format time as MM:SS
+      const minutes = Math.floor(elapsedSeconds / 60);
+      const seconds = elapsedSeconds % 60;
+      const formattedTime = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+      
+      this.timerText.setText(`Time: ${formattedTime}`);
     }
   }
 

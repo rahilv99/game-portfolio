@@ -22,7 +22,7 @@ export default class EndScene extends Phaser.Scene {
     // Get death count from localStorage
     this.deathCount = data.deathCount || 0;
     
-    this.score = data.score - (this.deathCount * 5) + (this.openedChests * 4);
+    this.score = data.score - (this.deathCount * 5) + (this.openedChests * 4) + Math.min(10, Math.max(0, 0.1 * (180 - this.elapsedTimeSeconds)));
     // Initialize leaderboard state
     this.leaderboardVisible = false;
     this.nameInputActive = false;
