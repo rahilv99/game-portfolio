@@ -319,7 +319,7 @@ export default class MainScene extends Phaser.Scene {
     help.setScrollFactor(0).setDepth(1000);
 
     // Create score display
-    this.scoreText = this.add.text(16, 100, "Score: 0", {
+    this.scoreText = this.add.text(16, 100, "Coins: 0", {
       fontSize: "24px",
       padding: { x: 10, y: 5 },
       backgroundColor: "#000000",
@@ -373,6 +373,7 @@ export default class MainScene extends Phaser.Scene {
     // Increment death count and save to localStorage
     this.deathCount++;
     localStorage.setItem('gameDeathCount', this.deathCount.toString());
+
 
     this.player.freeze();
     const cam = this.cameras.main;
@@ -557,7 +558,7 @@ export default class MainScene extends Phaser.Scene {
 
   updateScoreDisplay() {
     if (this.scoreText) {
-      this.scoreText.setText(`Score: ${this.score}`);
+      this.scoreText.setText(`Coins: ${this.score}`);
     }
   }
 
@@ -728,7 +729,7 @@ export default class MainScene extends Phaser.Scene {
     
     // Create instruction text
     const instructions = this.add.text(screenWidth / 2, containerY + containerHeight + 20, "↑/↓ Arrow Keys to scroll • R to close", {
-      fontSize: "16px",
+      fontSize: "20px",
       fill: "#BDC3C7",
       fontStyle: "italic",
       align: "center"
@@ -753,7 +754,7 @@ export default class MainScene extends Phaser.Scene {
     sortedInventory.forEach((item, index) => {
       // Create temporary text to measure actual dimensions
       const tempText = this.add.text(0, 0, item.script, {
-        fontSize: "14px",
+        fontSize: "18px",
         fontStyle: "normal",
         wordWrap: { width: containerWidth - 100, useAdvancedWrap: true }
       });
@@ -783,7 +784,7 @@ export default class MainScene extends Phaser.Scene {
       numberBadge.setData('originalY', badgeY); // Store original position
       
       const numberText = this.add.text(containerX + 30, badgeY, item.number.toString(), {
-        fontSize: "16px",
+        fontSize: "20px",
         fill: "#FFFFFF",
         fontStyle: "bold",
         align: "center"
@@ -794,7 +795,7 @@ export default class MainScene extends Phaser.Scene {
       // Create script content positioned within the flexible container
       const textY = currentY + 15;
       const scriptText = this.add.text(containerX + 60, textY, item.script, {
-        fontSize: "14px",
+        fontSize: "18px",
         fill: "#ECF0F1",
         fontStyle: "normal",
         align: "left",
@@ -994,16 +995,13 @@ export default class MainScene extends Phaser.Scene {
     const endTime = this.time.now;
     const elapsedTimeMs = endTime - this.startTime;
     const elapsedTimeSeconds = Math.floor(elapsedTimeMs / 1000);
-    
     // Prepare data to pass to end scene
     const endSceneData = {
       inventory: this.inventory,
       score: this.score,
       winCondition: winCondition,
-      totalChests: this.totalChests,
       openedChests: this.openedChests,
       deathCount: this.deathCount,
-      elapsedTimeMs: elapsedTimeMs,
       elapsedTimeSeconds: elapsedTimeSeconds
     };
 

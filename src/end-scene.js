@@ -12,21 +12,17 @@ export default class EndScene extends Phaser.Scene {
   init(data) {
     // Receive data from main scene
     this.playerInventory = data.inventory || [];
-    this.finalScore = data.score || 0;
     this.winCondition = data.winCondition || 'unknown'; // 'endPoint' or 'allChests'
-    this.totalChests = data.totalChests || 0;
     this.openedChests = data.openedChests || 0;
     
     // Timer data from main scene
-    this.elapsedTimeMs = data.elapsedTimeMs || 0;
     this.elapsedTimeSeconds = data.elapsedTimeSeconds || 0;
     
-    // Calculate coins from inventory (assuming inventory contains coin data)
-    this.coinsCollected = data.coinsCollected || 0;
-    
+    this.coins = data.score;
     // Get death count from localStorage
-    this.deathCount = parseInt(localStorage.getItem('gameDeathCount') || '0', 10);
+    this.deathCount = data.deathCount || 0;
     
+    this.score = data.score - (this.deathCount * 5) + (this.openedChests * 4);
     // Initialize leaderboard state
     this.leaderboardVisible = false;
     this.nameInputActive = false;
@@ -302,7 +298,7 @@ export default class EndScene extends Phaser.Scene {
     sortedInventory.forEach((item, index) => {
       // Create temporary text to measure actual dimensions
       const tempText = this.add.text(0, 0, item.script, {
-        fontSize: "14px",
+        fontSize: "18px",
         fontStyle: "normal",
         wordWrap: { width: containerWidth - 100, useAdvancedWrap: true }
       });
@@ -332,7 +328,7 @@ export default class EndScene extends Phaser.Scene {
       numberBadge.setData('originalY', badgeY); // Store original position
       
       const numberText = this.add.text(containerX + 30, badgeY, item.number.toString(), {
-        fontSize: "16px",
+        fontSize: "20px",
         fill: "#FFFFFF",
         fontStyle: "bold",
         align: "center"
@@ -343,7 +339,7 @@ export default class EndScene extends Phaser.Scene {
       // Create script content positioned within the flexible container
       const textY = currentY + 15;
       const scriptText = this.add.text(containerX + 60, textY, item.script, {
-        fontSize: "14px",
+        fontSize: "18px",
         fill: "#ECF0F1",
         fontStyle: "normal",
         align: "left",
@@ -481,6 +477,7 @@ export default class EndScene extends Phaser.Scene {
   closeInventory() {
     if (this.currentInventoryDisplay) {
       // Clean up all inventory elements
+      this.inventoryContainer.clear(true, true);
       this.inventoryContainer.destroy();
       
       if (this.inventoryScrollMask) {
@@ -515,7 +512,7 @@ export default class EndScene extends Phaser.Scene {
     try {
       const { data, error } = await supabase
         .from('leaderboard')
-        .select('name, score, coins, deaths, chests')
+        .select('name, score, coins, deaths, chests, time')
         .order('score', { ascending: false })
         .limit(5);
 
@@ -550,10 +547,11 @@ export default class EndScene extends Phaser.Scene {
         const { error: updateError } = await supabase
           .from('leaderboard')
           .update({
-            score: this.finalScore,
-            coins: this.coinsCollected,
+            score: this.score,
+            coins: this.coins,
             deaths: this.deathCount,
-            chests: this.openedChests
+            chests: this.openedChests,
+            time: this.elapsedTimeSeconds
           })
           .eq('id', existing[0].id);
 
@@ -682,7 +680,7 @@ export default class EndScene extends Phaser.Scene {
     currentStatsTitle.setOrigin(0.5).setScrollFactor(0).setDepth(4001);
     this.leaderboardContainer.add(currentStatsTitle);
 
-    const statsText = `Score: ${this.finalScore} | Coins: ${this.coinsCollected} | Deaths: ${this.deathCount} | Chests: ${this.openedChests}`;
+    const statsText = `Score: ${this.score} | Coins: ${this.coins} | Deaths: ${this.deathCount} | Chests: ${this.openedChests}`;
     const currentStats = this.add.text(width / 2, currentStatsY + 30, statsText, {
       fontSize: '16px',
       fontFamily: 'Arial, sans-serif',
