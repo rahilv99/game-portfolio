@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<title>Thoughts - Rahil's Portfolio</title>
+	<link rel="icon" type="image/x-icon" href="static/assets/images/favicon.ico">
+	<style>
+		* {
+			margin: 0;
+			padding: 0;
+			box-sizing: border-box;
+		}
+
+		body {
+			font-family: Arial, Helvetica, sans-serif;
+			background: #ffffff;
+			color: #000000;
+			min-height: 100vh;
+			display: grid;
+			grid-template-rows: auto 1fr;
+		}
+
+		/* Header */
+		.header {
+			background: #ffffff;
+			border-bottom: 2px solid #000000;
+			padding: 20px;
+			text-align: center;
+		}
+
+		.header h1 {
+			font-size: 24px;
+			font-weight: bold;
+			color: #000000;
+			text-transform: uppercase;
+			letter-spacing: 2px;
+		}
+
+		/* Main Layout */
+		.main-layout {
+			display: grid;
+			grid-template-columns: 250px 1fr 200px;
+			gap: 0;
+			padding: 0;
+			min-height: 0;
+		}
+
+		/* Sidebar */
+		.sidebar {
+			background: #ffffff;
+			padding: 20px;
+			height: fit-content;
+			border-right: 2px solid #000000;
+		}
+
+		.sidebar h2 {
+			font-size: 16px;
+			font-weight: bold;
+			color: #000000;
+			margin-bottom: 15px;
+			padding-bottom: 8px;
+			border-bottom: 1px solid #000000;
+			text-transform: uppercase;
+		}
+
+		.nav-links {
+			list-style: none;
+		}
+
+		.nav-links li {
+			margin-bottom: 5px;
+		}
+
+		.nav-links a {
+			color: #000000;
+			text-decoration: underline;
+			font-size: 14px;
+			font-weight: normal;
+			padding: 5px 0;
+			display: block;
+		}
+
+		.nav-links a:hover {
+			background: #000000;
+			color: #ffffff;
+			text-decoration: none;
+		}
+
+		.nav-links a.active {
+			background: #000000;
+			color: #ffffff;
+			text-decoration: none;
+			font-weight: bold;
+		}
+
+		/* Thoughts Container */
+		.thoughts-section {
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			justify-content: flex-start;
+			min-height: 0;
+			background: #ffffff;
+			border-left: 2px solid #000000;
+			border-right: 2px solid #000000;
+			padding: 40px 30px;
+			overflow-y: auto;
+		}
+
+		.thoughts-container {
+			max-width: 800px;
+			width: 100%;
+		}
+
+		.thoughts-header {
+			text-align: center;
+			margin-bottom: 40px;
+		}
+
+		.thoughts-header h1 {
+			font-size: 32px;
+			font-weight: bold;
+			color: #000000;
+			text-transform: uppercase;
+			letter-spacing: 1px;
+			margin-bottom: 10px;
+		}
+
+		.thoughts-header p {
+			font-size: 16px;
+			color: #666666;
+			line-height: 1.6;
+		}
+
+		/* Thought Sections */
+		.thought-section {
+			background: #ffffff;
+			border: 2px solid #000000;
+			margin-bottom: 30px;
+			padding: 25px;
+			border-radius: 0;
+		}
+
+		.thought-section:hover {
+			box-shadow: 5px 5px 0px #000000;
+			transform: translate(-2px, -2px);
+			transition: all 0.2s ease;
+		}
+
+		.thought-title {
+			font-size: 20px;
+			font-weight: bold;
+			color: #000000;
+			margin-bottom: 15px;
+			text-transform: uppercase;
+			letter-spacing: 1px;
+			border-bottom: 1px solid #000000;
+			padding-bottom: 8px;
+		}
+
+		.thought-content {
+			font-size: 16px;
+			line-height: 1.8;
+			color: #000000;
+			text-align: justify;
+		}
+
+		.thought-content p {
+			margin-bottom: 15px;
+		}
+
+		.thought-content p:last-child {
+			margin-bottom: 0;
+		}
+
+		.thought-date {
+			font-size: 12px;
+			color: #666666;
+			text-align: right;
+			margin-top: 15px;
+			border-top: 1px solid #e0e0e0;
+			padding-top: 10px;
+			text-transform: uppercase;
+			letter-spacing: 1px;
+		}
+
+		/* Social Links */
+		.social-section {
+			background: #ffffff;
+			padding: 20px;
+			height: fit-content;
+		}
+
+		.social-section h2 {
+			font-size: 16px;
+			font-weight: bold;
+			color: #000000;
+			margin-bottom: 15px;
+			padding-bottom: 8px;
+			border-bottom: 1px solid #000000;
+			text-transform: uppercase;
+		}
+
+		.social-links {
+			display: flex;
+			flex-direction: column;
+			gap: 10px;
+		}
+
+		.social-links a {
+			color: #000000;
+			text-decoration: underline;
+			font-size: 14px;
+			font-weight: normal;
+			padding: 8px;
+			display: flex;
+			align-items: center;
+			gap: 8px;
+			border: 1px solid #000000;
+		}
+
+		.social-links a:hover {
+			background: #000000;
+			color: #ffffff;
+			text-decoration: none;
+		}
+
+		.social-icon {
+			width: 16px;
+			height: 16px;
+		}
+
+		/* Responsive Design */
+		@media (max-width: 1200px) {
+			.main-layout {
+				grid-template-columns: 200px 1fr 180px;
+			}
+		}
+
+		@media (max-width: 968px) {
+			.main-layout {
+				grid-template-columns: 1fr;
+				gap: 0;
+			}
+
+			.sidebar,
+			.social-section {
+				order: 2;
+				border-right: none;
+				border-top: 2px solid #000000;
+			}
+
+			.thoughts-section {
+				order: 1;
+				border-left: none;
+				border-right: none;
+				border-bottom: 2px solid #000000;
+				padding: 30px 20px;
+			}
+
+			.social-links {
+				flex-direction: row;
+				flex-wrap: wrap;
+			}
+		}
+
+		@media (max-width: 640px) {
+			.header {
+				padding: 15px;
+			}
+
+			.header h1 {
+				font-size: 18px;
+			}
+
+			.sidebar,
+			.social-section {
+				padding: 15px;
+			}
+
+			.thoughts-section {
+				padding: 20px 15px;
+			}
+
+			.thoughts-header h1 {
+				font-size: 24px;
+			}
+
+			.thought-section {
+				padding: 20px;
+			}
+
+			.thought-title {
+				font-size: 18px;
+			}
+
+			.thought-content {
+				font-size: 14px;
+			}
+		}
+	</style>
+</head>
+
+<body>
+	<header class="header">
+		<h1>Rahil Verma</h1>
+	</header>
+
+	<main class="main-layout">
+		<aside class="sidebar">
+			<h2>Navigation</h2>
+			<nav>
+				<ul class="nav-links">
+					<li><a href="index.html">Play Game</a></li>
+					<li><a href="resume.html">Resume</a></li>
+					<li><a href="thoughts.html" class="active">Thoughts</a></li>
+				</ul>
+			</nav>
+		</aside>
+
+		<section class="thoughts-section">
+			<div class="thoughts-container">
+				<div class="thoughts-header">
+					<h1>Thoughts & Reflections</h1>
+					<p>A collection of my musings on technology, development, and life experiences.</p>
+				</div>
+
+				<article class="thought-section">
+					<h2 class="thought-title">On the Attention Economy</h2>
+					<div class="thought-content">
+						<p>"Every individual... neither intends to promote the public interest, nor knows how much he is promoting it... he intends only his own security; and by directing that industry in such a manner as its produce may be of the greatest value, he intends only his own gain, and he is in this, as in many other cases, led by an invisible hand to promote an end which was no part of his intention... by pursuing his own interest he frequently promotes that of the society more effectually than when he really intends to promote it." - Adam Smith, 1776</p>
+						<p>This idea of market economics is no longer applicable to fields that have surpassed the strength of human will and hijack the mechanisms of attention.</p>
+                        <h3>Brief human history.</h3>
+                        <p>Technology has evolved with humanity for millennia. Some evolution theories propose the divergence of humans from the great apes was a result of smaller, weaker chimpanzee communities harnessing tools to become stronger and eventually more intelligent animals. Since that first ape family, technology supported the improvement in quality of life for every socio-economic class. Remarkably, the last 70 or so years of technology has been more impactful than the entirety of human evolution preceding it. With the age of computers, the world has accelerated to light speed in development, globalization, and innovation. Massive improvements to quality of life have been made in almost every part of the world, bringing prosperity to innovative nations and opportunity to developing economies.</p>
+                        <p>For the first time in history, technology is being engineered to cripple the user. Social media and fast-form media (Tik Tok, Instagram Reels, YouTube Shorts) are designed to keep a user captivated instead of providing true value. Depression and anxiety are higher than ever before. Despite enjoying the highest quality of life in human history, we have never been less happy.</p>
+                        <h3>Here’s why.</h3>
+                        <p>It may be easy to blame big tech companies, prioritizing profits over consumer well-being and neglecting to inform people of the risks that come with their products. Personally, I wouldn’t blame a company for making their stake holders money. Instead, I’d bring attention (pun intended) to the structures put in place to address a somewhat similar problem.</p>
+                        <p>A perfectly free market puts all the power in the consumer – that is, the consumers decide what products are most successful. In tech, we have a generally free market. This is great for innovative companies and almost always yields the best technology. The question is how do we define best? When technology is designed to be used as a tool, the best technology is almost always best for the consumer. The problem arises when technology is engineered to override the human reward system, creating products that feel equally as useful to a consumer but in reality, provide little true value.</p>
+                        <p>Does this remind you of anything?</p>
+                        <p>Fast-form media is an addictive substance. Take alcohol, cannabis, or any other recreation that are known to have negative consequences on the general public. There are heavy regulations on who can sell them, the contents of the products, and most certainly a minimum age.</p>
+                        <h3>Advanced ML algorithms + smooth UI = alcohol and drugs?</h3>
+                        <p>Some might say this is an extreme parallel. That’s up for you to decide. Depression, anxiety, suicide, divorce, and many more metrics of societal decline have been linked to the creation of these technologies that undeniably have decreased overall happiness in the world. What other metric would you use to measure the success of the world than overall happiness? What really matters if our society is chronically online?</p>
+                        <p>It’s time to start treating malicious technologies by their impacts on society. An entire generation has grown up comparing themselves to everything else, looking at this beautiful world through 60 second videos with audio and visuals designed to addict a developing brain. The solution is not to remove these technologies, rather to impose responsible regulations that are difficult to impose because our laws were designed for the economics of 1776.</p>
+                    </div>
+					<div class="thought-date">December 2024</div>
+				</article>
+			</div>
+		</section>
+
+		<aside class="social-section">
+			<h2>Connect</h2>
+			<div class="social-links">
+				<a href="https://github.com/rahilv99" target="_blank" rel="noopener noreferrer">
+					<svg class="social-icon" viewBox="0 0 24 24" fill="currentColor">
+						<path d="M12 0C5.374 0 0 5.373 0 12 0 17.302 3.438 21.8 8.207 23.387c.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0112 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z"/>
+					</svg>
+					GitHub
+				</a>
+				<a href="https://linkedin.com/in/rahilv99" target="_blank" rel="noopener noreferrer">
+					<svg class="social-icon" viewBox="0 0 24 24" fill="currentColor">
+						<path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+					</svg>
+					LinkedIn
+				</a>
+				<a href="mailto:contact@rahilv99@gmail.com">
+					<svg class="social-icon" viewBox="0 0 24 24" fill="currentColor">
+						<path d="M24 5.457v13.909c0 .904-.732 1.636-1.636 1.636h-3.819V11.73L12 16.64l-6.545-4.91v9.273H1.636A1.636 1.636 0 010 19.366V5.457c0-.904.732-1.636 1.636-1.636h.545L12 10.545l9.818-6.724h.545c.904 0 1.637.732 1.637 1.636z"/>
+					</svg>
+					Email
+				</a>
+			</div>
+		</aside>
+	</main>
+</body>
+
+</html>

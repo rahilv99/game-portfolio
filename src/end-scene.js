@@ -566,8 +566,8 @@ export default class EndScene extends Phaser.Scene {
           .insert([
             {
               name: name,
-              score: this.finalScore,
-              coins: this.coinsCollected,
+              score: this.score,
+              coins: this.coins,
               deaths: this.deathCount,
               chests: this.openedChests
             }
