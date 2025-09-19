@@ -157,6 +157,7 @@ export default class MainScene extends Phaser.Scene {
       this.load.image(`gold-${i}`, `assets/spritesheets/coins/Gold/Gold_${i}.png`);
     }
 
+    this.load.image('mountains', 'assets/backgrounds/Mountains 4.png')
   }
 
   create() {
@@ -185,9 +186,6 @@ export default class MainScene extends Phaser.Scene {
     
     // Get death count from localStorage (persists across game restarts)
     this.deathCount = parseInt(localStorage.getItem('gameDeathCount') || '0', 10);
-    
-    // map.createLayer("Background", tileset, 0, 0);
-    // map.createLayer("Foreground", tileset, 0, 0).setDepth(10);
 
     const map = this.make.tilemap({ key: "world" });
     const tileset = map.addTilesetImage("vertical");
@@ -321,6 +319,9 @@ export default class MainScene extends Phaser.Scene {
       fill: "#000000",
     });
     help.setScrollFactor(0).setDepth(1000);
+
+    // Show welcome alert when player first enters the scene
+    this.showWelcomeAlert();
 
     // Create score display
     this.scoreText = this.add.text(16, 100, "Coins: 0", {
@@ -666,6 +667,78 @@ export default class MainScene extends Phaser.Scene {
         console.log(`Cannot open chest! Need ${this.chestCost} coins, but only have ${this.score}`);
       }
     }
+  }
+
+  showWelcomeAlert() {
+    // Create a prominent welcome alert in the center of the screen
+    const screenWidth = this.cameras.main.width;
+    const screenHeight = this.cameras.main.height;
+    
+    const alertText = "🗺️ WELCOME TO RAHIL'S ADVENTURE! 🗝️\n\nOpen chests to collect scripts!\n\nYou need 3 coins to open a chest.";
+    
+    // Create background overlay
+    const overlay = this.add.rectangle(screenWidth / 2, screenHeight / 2, screenWidth, screenHeight, 0x000000, 0.7);
+    overlay.setScrollFactor(0).setDepth(4000);
+    
+    // Create alert box
+    const alertBox = this.add.rectangle(screenWidth / 2, screenHeight / 2, 500, 200, 0x2C3E50, 0.95);
+    alertBox.setScrollFactor(0).setDepth(4010);
+    alertBox.setStrokeStyle(4, 0xF39C12);
+    
+    // Create alert text
+    const alert = this.add.text(screenWidth / 2, screenHeight / 2, alertText, {
+      fontSize: "20px",
+      padding: { x: 20, y: 15 },
+      fill: "#FFFFFF",
+      align: "center",
+      fontStyle: "bold"
+    });
+    alert.setOrigin(0.5, 0.5);
+    alert.setScrollFactor(0);
+    alert.setDepth(4020);
+    
+    // Create instruction text
+    const instruction = this.add.text(screenWidth / 2, screenHeight / 2 + 80, "Press any key to continue", {
+      fontSize: "16px",
+      fill: "#BDC3C7",
+      align: "center",
+      fontStyle: "italic"
+    });
+    instruction.setOrigin(0.5, 0.5);
+    instruction.setScrollFactor(0);
+    instruction.setDepth(4020);
+    
+    // Make instruction text blink
+    this.tweens.add({
+      targets: instruction,
+      alpha: 0.3,
+      duration: 800,
+      ease: 'Power2',
+      yoyo: true,
+      repeat: -1
+    });
+    
+    // Store references for cleanup
+    const alertElements = [overlay, alertBox, alert, instruction];
+    
+    // Set up input handler to dismiss the alert
+    const dismissAlert = () => {
+      // Remove all alert elements
+      alertElements.forEach(element => {
+        if (element && element.destroy) {
+          element.destroy();
+        }
+      });
+      
+      // Remove the input listener
+      this.input.keyboard.off('keydown', dismissAlert);
+    };
+    
+    // Listen for any key press to dismiss the alert
+    this.input.keyboard.on('keydown', dismissAlert);
+    
+    // Auto-dismiss after 10 seconds if no input
+    this.time.delayedCall(10000, dismissAlert);
   }
 
   showInsufficientFundsMessage() {
