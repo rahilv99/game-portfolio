@@ -143,7 +143,7 @@ export default class Player {
     const isOnGround = this.isTouching.ground;
     const isInAir = !isOnGround;
 
-    const moveForce = isOnGround ? 0.02: 0.005;
+    const moveForce = isOnGround ? 0.03: 0.01;
 
     if (isLeftKeyDown) {
       this.forward = false;
