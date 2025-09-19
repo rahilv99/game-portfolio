@@ -830,8 +830,7 @@ export default class EndScene extends Phaser.Scene {
     
     if (success) {
       // Show success message
-      const width = this.sys.game.config.width;
-      const height = this.sys.game.config.height;
+      const { width, height } = this.cameras.main;
       const successMessage = this.add.text(width / 2, height / 2 + 100, 'Score saved successfully!', {
         fontSize: '18px',
         fontFamily: 'Arial, sans-serif',
